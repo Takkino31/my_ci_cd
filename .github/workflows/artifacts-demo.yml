@@ -1,0 +1,78 @@
+name: Artifacts Management
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests with coverage
+      run: |
+        npm test -- --coverage
+        mkdir -p test-results
+        # Simuler la génération de rapports
+        echo "Test coverage: 85%" > test-results/coverage.txt
+        echo "Tests passed: 42/42" > test-results/summary.txt
+    
+    - name: Build application
+      run: |
+        mkdir -p dist
+        echo "Built application v1.0.0" > dist/app.js
+        echo "Configuration file" > dist/config.json
+    
+    # Upload multiple artifacts
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: application-build
+        path: dist/
+        retention-days: 30
+    
+    - name: Upload test reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports
+        path: test-results/
+        retention-days: 90
+    
+    - name: Upload logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs
+        path: ${{ github.workflow }}-${{ github.run_id }}-logs.txt
+        retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: application-build
+    
+    - name: List downloaded artifacts
+      run: ls -la
+    
+    - name: Simulate deployment
+      run: |
+        echo "📦 Deploying artifacts..."
+        echo "Application content:"
+        cat app.js
+        echo "✅ Deployment simulation complete"

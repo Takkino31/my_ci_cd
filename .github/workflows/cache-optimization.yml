@@ -1,0 +1,64 @@
+name: Cache Optimization Demo
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  cache-demo:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    # Cache npm
+    - name: Cache npm dependencies
+      id: cache-npm
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-npm-modules
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    
+    # Cache global npm cache
+    - name: Get npm cache directory
+      id: npm-cache-dir
+      run: |
+        echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+    
+    - name: Cache global npm cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.npm-cache-dir.outputs.dir }}
+        key: ${{ runner.os }}-npm-cache-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-cache-
+    
+    # Mesurer le temps gagné
+    - name: Install dependencies (with potential cache)
+      run: |
+        start_time=$(date +%s)
+        npm ci
+        end_time=$(date +%s)
+        echo "Installation time: $((end_time - start_time)) seconds"
+        
+        # Afficher les stats de cache
+        if [[ "${{ steps.cache-npm.outputs.cache-hit }}" == 'true' ]]; then
+          echo "🎉 Cache hit! Dependencies loaded from cache."
+        else
+          echo "📦 Cache miss. Fresh npm install."
+        fi
+    
+    - name: Run tests
+      run: npm test

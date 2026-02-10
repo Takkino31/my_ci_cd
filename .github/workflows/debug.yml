@@ -1,0 +1,38 @@
+name: Debug Context
+
+on: [workflow_dispatch]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+      run: |
+        echo "=== GitHub Context ==="
+        echo "$GITHUB_CONTEXT" | jq .
+    
+    - name: Dump Job context
+      env:
+        JOB_CONTEXT: ${{ toJSON(job) }}
+      run: |
+        echo "=== Job Context ==="
+        echo "$JOB_CONTEXT" | jq .
+    
+    - name: Dump Steps context
+      env:
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+      run: |
+        echo "=== Steps Context ==="
+        echo "$STEPS_CONTEXT" | jq .
+    
+    - name: Useful GitHub variables
+      run: |
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "SHA: ${{ github.sha }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run Number: ${{ github.run_number }}"
